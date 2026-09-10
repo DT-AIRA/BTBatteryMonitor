@@ -1,0 +1,34 @@
+# .NET / C# build outputs
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Portable SDK & Tools (プロジェクト内完結のミドルウェア本体はGit管理対象外)
+tools/dotnet/
+tools/inno/
+tools/*.ps1
+tools/*.exe
+tools/*.zip
+
+# Publish and Distribution outputs
+publish/
+dist/
+
+# Visual Studio / VS Code
+.vs/
+.vscode/
+*.swp
+*~
+
+# Internal development logs & rules
+docs/logs/
+PROJECT_RULES.md
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
