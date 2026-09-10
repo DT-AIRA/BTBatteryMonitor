@@ -25,28 +25,34 @@ DisableProgramGroupPage=yes
 LicenseFile=..\LICENSE
 OutputDir=..\dist
 OutputBaseFilename=BTBatteryMonitor_Setup
-Compression=lzma2/max
-SolidCompression=yes
+Compression=zip
+SolidCompression=no
 WizardStyle=modern
+SetupIconFile=..\src\BTBatteryMonitor\app.ico
+UninstallDisplayIcon={app}\{#MyAppExeName}
+
+; 詳細なバージョン・メタデータ（信頼性向上・誤検知防止）
+VersionInfoVersion={#MyAppVersion}
+VersionInfoCompany={#MyAppPublisher}
+VersionInfoDescription=BTBatteryMonitor Windows Installer
+VersionInfoCopyright=Copyright (C) 2026 DT-AIRA
+VersionInfoProductName={#MyAppName}
+VersionInfoProductVersion={#MyAppVersion}
 
 ; 既存プロセスの自動終了・警告
 CloseApplications=yes
+InfoAfterFile=FinishedInfo.txt
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "japanese"; MessagesFile: "compiler:Languages\Japanese.isl"
 
 [Tasks]
-Name: "startup"; Description: "Launch at Windows startup (Windows起動時に自動起動)"; GroupDescription: "Additional options:"
 Name: "desktopicon"; Description: "Create a desktop shortcut (デスクトップにショートカットを作成)"; GroupDescription: "Additional options:"; Flags: unchecked
 
 [Files]
-Source: "..\publish\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\publish_files\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
-Name: "{userstartup}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: startup
-
-[Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent

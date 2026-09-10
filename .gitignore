@@ -15,6 +15,7 @@ tools/*.zip
 
 # Publish and Distribution outputs
 publish/
+publish_files/
 dist/
 
 # Visual Studio / VS Code

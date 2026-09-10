@@ -1,0 +1,22 @@
+=======================================================
+ BTBatteryMonitor
+=======================================================
+
+【インストールが完了しました】
+
+スタートメニューまたはデスクトップのショートカットから「BTBatteryMonitor」を起動してください。
+
+■ Windows起動時の自動起動について:
+ウィジェットを起動後、ウィジェット上を右クリックして
+「Launch at Startup」にチェックを入れると、
+次回以降のPC起動時に自動でバックグラウンド常駐します。
+
+-------------------------------------------------------
+[Installation Complete]
+
+Please launch BTBatteryMonitor from the Start Menu or Desktop shortcut.
+
+■ Auto-launch at Windows Startup:
+After launching the widget, right-click anywhere on it and check
+"Launch at Startup" to enable automatic startup with Windows.
+=======================================================

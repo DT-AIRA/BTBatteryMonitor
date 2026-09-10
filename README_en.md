@@ -55,8 +55,9 @@ A lightweight, transparent desktop widget that displays the battery levels of co
 
 - **Move Widget**: Left-click and drag anywhere on the widget to reposition it on your desktop.
 - **Right-Click Context Menu**:
-  - **Always on Top**: Toggle pinning the widget above all other windows (state reflected with a checkmark).
   - **Refresh**: Manually force-refresh battery levels.
+  - **Always on Top**: Toggle pinning the widget above all other windows (state reflected with a checkmark).
+  - **Launch at Startup**: Toggle automatic execution at Windows startup (state reflected with a checkmark).
   - **Exit**: Exit the application.
 
 ---

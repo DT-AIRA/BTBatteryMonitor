@@ -116,6 +116,7 @@
             <MenuItem Header="Refresh" Click="MenuItem_Refresh_Click" />
             <Separator />
             <MenuItem x:Name="MenuAlwaysOnTop" Header="Always on Top" IsCheckable="True" IsChecked="True" Click="MenuItem_AlwaysOnTop_Click" />
+            <MenuItem x:Name="MenuLaunchAtStartup" Header="Launch at Startup" IsCheckable="True" Click="MenuItem_LaunchAtStartup_Click" />
             <Separator />
             <MenuItem Header="Exit" Click="MenuItem_Exit_Click" />
         </ContextMenu>

@@ -1,9 +1,12 @@
 using System;
+using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Threading;
+using Microsoft.Win32;
 using BTBatteryMonitor.ViewModels;
 
 namespace BTBatteryMonitor
@@ -14,6 +17,8 @@ namespace BTBatteryMonitor
     public partial class MainWindow : Window
     {
         private const int WM_DEVICECHANGE = 0x0219;
+        private const string StartupRegistryKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
+        private const string AppRegistryName = "BTBatteryMonitor";
         private readonly DispatcherTimer _debounceTimer;
 
         public MainWindow()
@@ -38,6 +43,9 @@ namespace BTBatteryMonitor
         protected override void OnSourceInitialized(EventArgs e)
         {
             base.OnSourceInitialized(e);
+
+            // スタートアップ登録状態の初期判定
+            UpdateStartupMenuState();
 
             // Windows PnPメッセージ (WM_DEVICECHANGE) のフック登録
             var source = PresentationSource.FromVisual(this) as HwndSource;
@@ -78,6 +86,54 @@ namespace BTBatteryMonitor
             if (sender is MenuItem item)
             {
                 item.IsChecked = Topmost;
+            }
+        }
+
+        private void MenuItem_LaunchAtStartup_Click(object sender, RoutedEventArgs e)
+        {
+            bool enable = MenuLaunchAtStartup.IsChecked;
+            SetStartupRegistry(enable);
+        }
+
+        private void UpdateStartupMenuState()
+        {
+            try
+            {
+                using var key = Registry.CurrentUser.OpenSubKey(StartupRegistryKey, false);
+                var val = key?.GetValue(AppRegistryName);
+                MenuLaunchAtStartup.IsChecked = val != null;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[MainWindow] Failed to read startup registry: {ex.Message}");
+            }
+        }
+
+        private void SetStartupRegistry(bool enable)
+        {
+            try
+            {
+                using var key = Registry.CurrentUser.OpenSubKey(StartupRegistryKey, true);
+                if (key == null) return;
+
+                if (enable)
+                {
+                    string exePath = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName ?? "";
+                    if (!string.IsNullOrEmpty(exePath))
+                    {
+                        key.SetValue(AppRegistryName, $"\"{exePath}\"");
+                    }
+                }
+                else
+                {
+                    key.DeleteValue(AppRegistryName, false);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[MainWindow] Failed to update startup registry: {ex.Message}");
+                // 失敗した場合はメニュー表示を元の状態に戻す
+                UpdateStartupMenuState();
             }
         }
 

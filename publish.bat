@@ -10,6 +10,7 @@ set "ISCC_EXE=%INNO_DIR%\ISCC.exe"
 set "PROJ_FILE=%SCRIPT_DIR%src\BTBatteryMonitor\BTBatteryMonitor.csproj"
 set "ISS_FILE=%SCRIPT_DIR%installer\BTBatteryMonitor.iss"
 set "PUBLISH_DIR=%SCRIPT_DIR%publish"
+set "PUBLISH_FILES_DIR=%SCRIPT_DIR%publish_files"
 set "DIST_DIR=%SCRIPT_DIR%dist"
 
 if not exist "%DOTNET_EXE%" (
@@ -22,7 +23,7 @@ echo  BTBatteryMonitor - Publish and Package Pipeline
 echo ========================================================
 echo.
 
-echo [1/3] Building Self-Contained Single EXE (Release x64)...
+echo [1/4] Building Self-Contained Single EXE (Release x64)...
 "%DOTNET_EXE%" publish "%PROJ_FILE%" -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o "%PUBLISH_DIR%"
 if %ERRORLEVEL% neq 0 (
     echo [Error] Dotnet publish failed.
@@ -30,7 +31,15 @@ if %ERRORLEVEL% neq 0 (
 )
 
 echo.
-echo [2/3] Checking Inno Setup compiler in tools\inno...
+echo [2/4] Building Unpacked Files for Installer (Avoiding Double-Packing)...
+"%DOTNET_EXE%" publish "%PROJ_FILE%" -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -o "%PUBLISH_FILES_DIR%"
+if %ERRORLEVEL% neq 0 (
+    echo [Error] Dotnet publish unpacked failed.
+    exit /b %ERRORLEVEL%
+)
+
+echo.
+echo [3/4] Checking Inno Setup compiler in tools\inno...
 if exist "%ISCC_EXE%" goto :COMPILE_INSTALLER
 
 echo Downloading Inno Setup (Portable mode)...
@@ -51,7 +60,7 @@ if not exist "%ISCC_EXE%" (
 
 :COMPILE_INSTALLER
 echo.
-echo [3/3] Compiling Windows Installer (dist\BTBatteryMonitor_Setup.exe)...
+echo [4/4] Compiling Windows Installer (dist\BTBatteryMonitor_Setup.exe)...
 if not exist "%DIST_DIR%" mkdir "%DIST_DIR%"
 "%ISCC_EXE%" "%ISS_FILE%"
 if %ERRORLEVEL% neq 0 (
