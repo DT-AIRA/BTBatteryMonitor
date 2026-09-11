@@ -7,6 +7,7 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Threading;
 using Microsoft.Win32;
+using BTBatteryMonitor.Services;
 using BTBatteryMonitor.ViewModels;
 
 namespace BTBatteryMonitor
@@ -20,6 +21,8 @@ namespace BTBatteryMonitor
         private const string StartupRegistryKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
         private const string AppRegistryName = "BTBatteryMonitor";
         private readonly DispatcherTimer _debounceTimer;
+        private static string StartupShortcutPath =>
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "BTBatteryMonitor.lnk");
 
         public MainWindow()
         {
@@ -43,6 +46,9 @@ namespace BTBatteryMonitor
         protected override void OnSourceInitialized(EventArgs e)
         {
             base.OnSourceInitialized(e);
+
+            // 前回のウィンドウ位置を復元
+            RestoreWindowPosition();
 
             // スタートアップ登録状態の初期判定
             UpdateStartupMenuState();
@@ -69,8 +75,11 @@ namespace BTBatteryMonitor
             if (e.ButtonState == MouseButtonState.Pressed)
             {
                 DragMove();
+                // ドラッグ移動完了時に位置を自動保存
+                SaveWindowPosition();
             }
         }
+
 
         private async void MenuItem_Refresh_Click(object sender, RoutedEventArgs e)
         {
@@ -92,49 +101,124 @@ namespace BTBatteryMonitor
         private void MenuItem_LaunchAtStartup_Click(object sender, RoutedEventArgs e)
         {
             bool enable = MenuLaunchAtStartup.IsChecked;
-            SetStartupRegistry(enable);
+            SetStartupShortcut(enable);
         }
 
         private void UpdateStartupMenuState()
         {
             try
             {
-                using var key = Registry.CurrentUser.OpenSubKey(StartupRegistryKey, false);
-                var val = key?.GetValue(AppRegistryName);
-                MenuLaunchAtStartup.IsChecked = val != null;
+                // 旧レジストリ方式の登録が残っている場合はクリーンアップ
+                CleanupLegacyRegistry();
+
+                MenuLaunchAtStartup.IsChecked = File.Exists(StartupShortcutPath);
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[MainWindow] Failed to read startup registry: {ex.Message}");
+                Debug.WriteLine($"[MainWindow] Failed to check startup shortcut: {ex.Message}");
             }
         }
 
-        private void SetStartupRegistry(bool enable)
+        private void SetStartupShortcut(bool enable)
         {
             try
             {
-                using var key = Registry.CurrentUser.OpenSubKey(StartupRegistryKey, true);
-                if (key == null) return;
+                string shortcutPath = StartupShortcutPath;
 
                 if (enable)
                 {
                     string exePath = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName ?? "";
                     if (!string.IsNullOrEmpty(exePath))
                     {
-                        key.SetValue(AppRegistryName, $"\"{exePath}\"");
+                        Type? shellType = Type.GetTypeFromProgID("WScript.Shell");
+                        if (shellType != null)
+                        {
+                            dynamic? shell = Activator.CreateInstance(shellType);
+                            if (shell != null)
+                            {
+                                dynamic shortcut = shell.CreateShortcut(shortcutPath);
+                                shortcut.TargetPath = exePath;
+                                shortcut.WorkingDirectory = Path.GetDirectoryName(exePath);
+                                shortcut.Description = "Bluetooth Battery Monitor";
+                                shortcut.Save();
+                            }
+                        }
                     }
                 }
                 else
                 {
-                    key.DeleteValue(AppRegistryName, false);
+                    if (File.Exists(shortcutPath))
+                    {
+                        File.Delete(shortcutPath);
+                    }
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[MainWindow] Failed to update startup registry: {ex.Message}");
-                // 失敗した場合はメニュー表示を元の状態に戻す
+                Debug.WriteLine($"[MainWindow] Failed to update startup shortcut: {ex.Message}");
                 UpdateStartupMenuState();
             }
+        }
+
+        private static void CleanupLegacyRegistry()
+        {
+            try
+            {
+                using var key = Registry.CurrentUser.OpenSubKey(StartupRegistryKey, true);
+                if (key?.GetValue(AppRegistryName) != null)
+                {
+                    key.DeleteValue(AppRegistryName, false);
+                }
+            }
+            catch { }
+        }
+
+        private void RestoreWindowPosition()
+        {
+            try
+            {
+                var settings = AppSettingsService.Load();
+                if (settings.WindowLeft.HasValue && settings.WindowTop.HasValue)
+                {
+                    double left = settings.WindowLeft.Value;
+                    double top = settings.WindowTop.Value;
+
+                    // 画面外に出ていないか（仮想スクリーン領域内にあるか）をチェック
+                    double virtualLeft = SystemParameters.VirtualScreenLeft;
+                    double virtualTop = SystemParameters.VirtualScreenTop;
+                    double virtualWidth = SystemParameters.VirtualScreenWidth;
+                    double virtualHeight = SystemParameters.VirtualScreenHeight;
+
+                    if (left >= virtualLeft && (left + 50) <= (virtualLeft + virtualWidth) &&
+                        top >= virtualTop && (top + 50) <= (virtualTop + virtualHeight))
+                    {
+                        WindowStartupLocation = WindowStartupLocation.Manual;
+                        Left = left;
+                        Top = top;
+                    }
+
+                }
+            }
+            catch { }
+        }
+
+        private void SaveWindowPosition()
+        {
+            try
+            {
+                AppSettingsService.Save(new AppSettings
+                {
+                    WindowLeft = Left,
+                    WindowTop = Top
+                });
+            }
+            catch { }
+        }
+
+        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        {
+            SaveWindowPosition();
+            base.OnClosing(e);
         }
 
         private void MenuItem_Exit_Click(object sender, RoutedEventArgs e)
