@@ -8,7 +8,28 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [v1.1.0] - 2026-09-18
+
+### Added (追加)
+- **Widget Color Customization (本体色のカスタマイズ)**:
+  - Added "Widget Color" context menu with popular dark presets (Default Dark, Pure Black, Deep Navy, Slate Gray, Deep Wine).
+  - Integrated native Win32 Color Palette dialog (`🎨 Color Palette...`) to allow picking any custom color.
+  - （右クリックメニューからウィジェット本体の背景色を人気ダークトーン5色およびWindows標準カラーパレットから自由に変更できる機能を追加）
+- **Widget Opacity Customization (透明度のカスタマイズ)**:
+  - Added "Widget Opacity" context menu with 5 transparency levels (100% Solid, 85% Default, 65% Translucent, 45% Clear, 25% Glass).
+  - Maintains crisp readability of text, icons, and battery bars while rendering translucent background card.
+  - （文字やアイコンの視認性を保ったまま、本体カードのみの透け具合を5段階から選択できる機能を追加）
+- **Appearance Settings Persistence (外観設定の自動保存・復元)**:
+  - Automatically persists chosen background color and opacity in `%LOCALAPPDATA%\BTBatteryMonitor\settings.json`.
+  - （選択した本体色と透明度を設定ファイルに自動保存し、次回起動時にもそのまま復元）
+- **Submenu Support in Modern Context Menu**:
+  - Enhanced custom MenuItem template with fade-in Popup and submenu arrow indicators.
+  - （右クリックメニューにフェードインアニメーション付きのサブメニュー展開機能を追加）
+
+---
+
 ## [v1.0.1] - 2026-09-11
+
 
 ### Added (追加)
 - **Window Position Persistence (位置記憶・自動復元)**:

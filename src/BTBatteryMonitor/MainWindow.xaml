@@ -29,36 +29,74 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type MenuItem}">
-                        <Border x:Name="ItemBorder"
-                                Background="Transparent"
-                                CornerRadius="4"
-                                Margin="2,1"
-                                Padding="6,2">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <!-- チェックマーク列 -->
-                                    <ColumnDefinition Width="18" />
-                                    <!-- ヘッダーテキスト列 -->
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
+                        <Grid>
+                            <Border x:Name="ItemBorder"
+                                    Background="Transparent"
+                                    CornerRadius="4"
+                                    Margin="2,1"
+                                    Padding="6,2">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <!-- チェックマーク列 -->
+                                        <ColumnDefinition Width="18" />
+                                        <!-- ヘッダーテキスト列 -->
+                                        <ColumnDefinition Width="*" />
+                                        <!-- サブメニュー矢印列 -->
+                                        <ColumnDefinition Width="14" />
+                                    </Grid.ColumnDefinitions>
 
-                                <!-- チェックマーク（Segoe Fluent Icons / MDL2: ✓） -->
-                                <TextBlock x:Name="CheckGlyph"
-                                           Text="&#xE73E;"
-                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                                           FontSize="10"
-                                           Foreground="#60CDFF"
-                                           VerticalAlignment="Center"
-                                           HorizontalAlignment="Left"
-                                           Visibility="Collapsed" />
+                                    <!-- チェックマーク（Segoe Fluent Icons / MDL2: ✓） -->
+                                    <TextBlock x:Name="CheckGlyph"
+                                               Text="&#xE73E;"
+                                               FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                               FontSize="10"
+                                               Foreground="#60CDFF"
+                                               VerticalAlignment="Center"
+                                               HorizontalAlignment="Left"
+                                               Visibility="Collapsed" />
 
-                                <ContentPresenter Grid.Column="1"
-                                                  ContentSource="Header"
-                                                  VerticalAlignment="Center"
-                                                  RecognizesAccessKey="True" />
-                            </Grid>
-                        </Border>
+                                    <ContentPresenter Grid.Column="1"
+                                                      ContentSource="Header"
+                                                      VerticalAlignment="Center"
+                                                      RecognizesAccessKey="True" />
+
+                                    <!-- サブメニュー親用 右矢印（▶） -->
+                                    <TextBlock x:Name="SubmenuArrow"
+                                               Grid.Column="2"
+                                               Text="&#xE76C;"
+                                               FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                               FontSize="9"
+                                               Foreground="#888899"
+                                               VerticalAlignment="Center"
+                                               HorizontalAlignment="Right"
+                                               Visibility="Collapsed" />
+                                </Grid>
+                            </Border>
+
+                            <!-- サブメニュー展開用 Popup -->
+                            <Popup x:Name="SubMenuPopup"
+                                   AllowsTransparency="True"
+                                   IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}"
+                                   Placement="Right"
+                                   Focusable="False"
+                                   PopupAnimation="Fade">
+                                <Border Background="#E61E1E22"
+                                        BorderBrush="#38FFFFFF"
+                                        BorderThickness="1"
+                                        CornerRadius="6"
+                                        Padding="2,3">
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="8" Opacity="0.4" Direction="270" ShadowDepth="2" Color="#000000" />
+                                    </Border.Effect>
+                                    <StackPanel IsItemsHost="True" />
+                                </Border>
+                            </Popup>
+                        </Grid>
+
                         <ControlTemplate.Triggers>
+                            <Trigger Property="HasItems" Value="True">
+                                <Setter TargetName="SubmenuArrow" Property="Visibility" Value="Visible" />
+                            </Trigger>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="CheckGlyph" Property="Visibility" Value="Visible" />
                             </Trigger>
@@ -115,6 +153,23 @@
         <ContextMenu>
             <MenuItem Header="Refresh" Click="MenuItem_Refresh_Click" />
             <Separator />
+            <MenuItem x:Name="MenuWidgetColor" Header="Widget Color">
+                <MenuItem Header="Default Dark (#1E1E22)" Click="MenuColor_Click" Tag="#1E1E22" />
+                <MenuItem Header="Pure Black (#000000)" Click="MenuColor_Click" Tag="#000000" />
+                <MenuItem Header="Deep Navy (#0F172A)" Click="MenuColor_Click" Tag="#0F172A" />
+                <MenuItem Header="Slate Gray (#27272A)" Click="MenuColor_Click" Tag="#27272A" />
+                <MenuItem Header="Deep Wine (#200B17)" Click="MenuColor_Click" Tag="#200B17" />
+                <Separator />
+                <MenuItem Header="🎨 Color Palette..." Click="MenuCustomColor_Click" />
+            </MenuItem>
+            <MenuItem x:Name="MenuWidgetOpacity" Header="Widget Opacity">
+                <MenuItem Header="100% (Solid)" Click="MenuOpacity_Click" Tag="1.0" />
+                <MenuItem Header="85% (Default)" Click="MenuOpacity_Click" Tag="0.85" />
+                <MenuItem Header="65% (Translucent)" Click="MenuOpacity_Click" Tag="0.65" />
+                <MenuItem Header="45% (Clear)" Click="MenuOpacity_Click" Tag="0.45" />
+                <MenuItem Header="25% (Glass)" Click="MenuOpacity_Click" Tag="0.25" />
+            </MenuItem>
+            <Separator />
             <MenuItem x:Name="MenuAlwaysOnTop" Header="Always on Top" IsCheckable="True" IsChecked="True" Click="MenuItem_AlwaysOnTop_Click" />
             <MenuItem x:Name="MenuLaunchAtStartup" Header="Launch at Startup" IsCheckable="True" Click="MenuItem_LaunchAtStartup_Click" />
             <Separator />
@@ -123,11 +178,13 @@
     </Window.ContextMenu>
 
     <!-- ウィジェット本体カード（半透明・角丸・極小余白） -->
-    <Border Margin="5"
+    <Border x:Name="MainCardBorder"
+            Margin="5"
             Background="#D81E1E22"
             CornerRadius="7"
             BorderBrush="#38FFFFFF"
             BorderThickness="1">
+
         <Border.Effect>
             <DropShadowEffect BlurRadius="7" Opacity="0.35" Direction="270" ShadowDepth="2" Color="#000000" />
         </Border.Effect>

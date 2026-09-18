@@ -8,7 +8,10 @@ namespace BTBatteryMonitor.Services
     {
         public double? WindowLeft { get; set; }
         public double? WindowTop { get; set; }
+        public string? BackgroundColorHex { get; set; } = "#1E1E22";
+        public double? BackgroundOpacity { get; set; } = 0.85;
     }
+
 
     public static class AppSettingsService
     {

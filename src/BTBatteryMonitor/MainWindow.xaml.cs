@@ -5,7 +5,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Threading;
+
 using Microsoft.Win32;
 using BTBatteryMonitor.Services;
 using BTBatteryMonitor.ViewModels;
@@ -23,6 +25,8 @@ namespace BTBatteryMonitor
         private readonly DispatcherTimer _debounceTimer;
         private static string StartupShortcutPath =>
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "BTBatteryMonitor.lnk");
+        private Color _currentBaseColor = Color.FromRgb(0x1E, 0x1E, 0x22);
+        private double _currentOpacity = 0.85;
 
         public MainWindow()
         {
@@ -50,7 +54,11 @@ namespace BTBatteryMonitor
             // 前回のウィンドウ位置を復元
             RestoreWindowPosition();
 
+            // 外観設定（色・透明度）の復元
+            RestoreAppearanceSettings();
+
             // スタートアップ登録状態の初期判定
+
             UpdateStartupMenuState();
 
             // Windows PnPメッセージ (WM_DEVICECHANGE) のフック登録
@@ -206,13 +214,105 @@ namespace BTBatteryMonitor
         {
             try
             {
-                AppSettingsService.Save(new AppSettings
-                {
-                    WindowLeft = Left,
-                    WindowTop = Top
-                });
+                var settings = AppSettingsService.Load();
+                settings.WindowLeft = Left;
+                settings.WindowTop = Top;
+                AppSettingsService.Save(settings);
             }
             catch { }
+        }
+
+        private void MenuColor_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem item && item.Tag is string hex)
+            {
+                try
+                {
+                    _currentBaseColor = (Color)ColorConverter.ConvertFromString(hex);
+                    ApplyCardAppearance();
+                    SaveAppearanceSettings();
+                }
+                catch { }
+            }
+        }
+
+        private void MenuCustomColor_Click(object sender, RoutedEventArgs e)
+        {
+            var hwnd = new WindowInteropHelper(this).Handle;
+            var pickedColor = ColorPickerHelper.ShowColorPicker(hwnd, _currentBaseColor);
+            if (pickedColor.HasValue)
+            {
+                _currentBaseColor = pickedColor.Value;
+                ApplyCardAppearance();
+                SaveAppearanceSettings();
+            }
+        }
+
+        private void MenuOpacity_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem item && item.Tag is string valStr && double.TryParse(valStr, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double opacity))
+            {
+                _currentOpacity = opacity;
+                ApplyCardAppearance();
+                SaveAppearanceSettings();
+            }
+        }
+
+        private void ApplyCardAppearance()
+        {
+            byte alpha = (byte)Math.Clamp((int)(_currentOpacity * 255), 10, 255);
+            MainCardBorder.Background = new SolidColorBrush(Color.FromArgb(alpha, _currentBaseColor.R, _currentBaseColor.G, _currentBaseColor.B));
+            UpdateAppearanceMenuState();
+        }
+
+        private void RestoreAppearanceSettings()
+        {
+            try
+            {
+                var settings = AppSettingsService.Load();
+                if (!string.IsNullOrEmpty(settings.BackgroundColorHex))
+                {
+                    _currentBaseColor = (Color)ColorConverter.ConvertFromString(settings.BackgroundColorHex);
+                }
+                if (settings.BackgroundOpacity.HasValue)
+                {
+                    _currentOpacity = Math.Clamp(settings.BackgroundOpacity.Value, 0.1, 1.0);
+                }
+                ApplyCardAppearance();
+            }
+            catch { }
+        }
+
+        private void SaveAppearanceSettings()
+        {
+            try
+            {
+                var settings = AppSettingsService.Load();
+                settings.BackgroundColorHex = $"#{_currentBaseColor.R:X2}{_currentBaseColor.G:X2}{_currentBaseColor.B:X2}";
+                settings.BackgroundOpacity = _currentOpacity;
+                AppSettingsService.Save(settings);
+            }
+            catch { }
+        }
+
+        private void UpdateAppearanceMenuState()
+        {
+            string currentHex = $"#{_currentBaseColor.R:X2}{_currentBaseColor.G:X2}{_currentBaseColor.B:X2}";
+            foreach (var item in MenuWidgetColor.Items)
+            {
+                if (item is MenuItem mi && mi.Tag is string hex)
+                {
+                    mi.IsChecked = string.Equals(hex, currentHex, StringComparison.OrdinalIgnoreCase);
+                }
+            }
+
+            foreach (var item in MenuWidgetOpacity.Items)
+            {
+                if (item is MenuItem mi && mi.Tag is string valStr && double.TryParse(valStr, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double op))
+                {
+                    mi.IsChecked = Math.Abs(op - _currentOpacity) < 0.05;
+                }
+            }
         }
 
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)

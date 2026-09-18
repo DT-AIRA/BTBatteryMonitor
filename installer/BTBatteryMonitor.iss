@@ -2,8 +2,9 @@
 ; Creator: DT-AIRA
 
 #define MyAppName "BTBatteryMonitor"
-#define MyAppVersion "1.0.1"
+#define MyAppVersion "1.1.0"
 #define MyAppPublisher "DT-AIRA"
+
 
 #define MyAppURL "https://github.com/DT-AIRA/BTBatteryMonitor"
 #define MyAppExeName "BTBatteryMonitor.exe"
